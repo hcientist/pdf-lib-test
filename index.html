@@ -1,0 +1,90 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <script src="https://unpkg.com/pdf-lib@1.4.0"></script>
+    <script src="https://unpkg.com/downloadjs@1.4.7"></script>
+  </head>
+
+  <body>
+    <h1>Courtesy of <code>pdf-lib</code></h1>
+    <p>Click the button on the left to see the pdf without the quarter note. Click the button on the right to see the pdf with the quarter note</p>
+    <div>
+      <!-- <button onclick="beforePdf()">PDF with NO quarter note...</button> -->
+      <button onclick="modifyPdf()">PDF with a quarter note!!!</button>
+    </div>
+    <p class="small">(Your browser will download the resulting file)</p>
+    <iframe id="source-doc-iframe"></iframe>
+    <iframe id="iframe">
+    </iframe>
+  </body>
+
+  <script>
+    const { degrees, PDFDocument, rgb, StandardFonts } = PDFLib
+    const url = 'https://pdf-lib.js.org/assets/with_update_sections.pdf'
+    const renderInIframe = (pdfBytes) => {
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const blobUrl = URL.createObjectURL(blob);
+      console.log('put the source in there!')
+      console.log('have elem?', document.getElementById('iframe'))
+      document.getElementById('iframe').src = blobUrl;
+    };
+		window.addEventListener('load', () => {
+      console.log('onload')
+      document.getElementById('source-doc-iframe').src= url;
+    })
+    async function beforePdf() {
+    // Fetch an existing PDF document
+    	
+
+      const existingPdfBytes = await fetch(url).then(res => res.arrayBuffer())
+    // Load a PDFDocument from the existing PDF bytes
+      const pdfDoc = await PDFDocument.load(existingPdfBytes)
+      
+      // Serialize the PDFDocument to bytes (a Uint8Array)
+      const pdfBytes = await pdfDoc.save()
+
+			// Trigger the browser to download the PDF document
+      download(pdfBytes, "pdf-lib_modification_example.pdf", "application/pdf");
+    }
+
+    async function modifyPdf() {
+      // Fetch an existing PDF document
+      const url = 'https://pdf-lib.js.org/assets/with_update_sections.pdf'
+  		const existingPdfBytes = await fetch(url).then(res => res.arrayBuffer())
+      // Fetch PNG image
+      const pngUrl = 'https://static.thenounproject.com/png/501761-200.png'
+      const pngImageBytes = await fetch(pngUrl).then((res) => res.arrayBuffer())
+
+      // Load a PDFDocument from the existing PDF bytes
+      const pdfDoc = await PDFDocument.load(existingPdfBytes)
+      
+			// Embed the PNG image bytes and PNG image bytes
+      const pngImage = await pdfDoc.embedPng(pngImageBytes)
+      
+			// Get the width/height of the JPG image scaled down to 25% of its original size; Dims stands for dimensions
+      const pngDims = pngImage.scale(0.15)
+      
+      // Get the first page of the document
+      const pages = pdfDoc.getPages()
+      const firstPage = pages[0]
+
+      // Get the width and height of the first page
+      const { width, height } = firstPage.getSize()
+      
+      // x is offset from the left side; y is offset from the bottom
+      firstPage.drawImage(pngImage, {
+        x: pngDims.width / 2,
+        y: firstPage.getHeight() / 2 - pngDims.height / 2,
+        width: pngDims.width,
+        height: pngDims.height,
+      })
+
+      // Serialize the PDFDocument to bytes (a Uint8Array)
+      const pdfBytes = await pdfDoc.save()
+      renderInIframe(pdfBytes)
+
+			// Trigger the browser to download the PDF document
+      /* download(pdfBytes, "pdf-lib_modification_example.pdf", "application/pdf") */;
+    }
+  </script>
+</html>
